@@ -1,0 +1,439 @@
+﻿@model SisEmpleo.Models.OfertaEmpleo
+
+@{
+    var ofertaEmp = ViewBag.Oferta as OfertaEmpleo ?? new OfertaEmpleo();
+    string[] horario;
+    if (ViewBag.Horario is string[] h && h.Length == 28)
+    {
+        horario = h;
+    }
+    else
+    {
+        horario = Enumerable.Repeat("", 28).ToArray();
+    }
+
+    // Obtener habilidades, prestaciones y categoría actuales de la oferta
+    var habilidadesActuales = ViewBag.HabilidadesSeleccionadas as List<int> ?? new List<int>();
+    var prestacionesActuales = ViewBag.PrestacionesSeleccionadas as List<int> ?? new List<int>();
+    var categoriaActual = ViewBag.CategoriaSeleccionada as int? ?? 0;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workeen - Editar Oferta de Empleo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #F4F6F9;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .edit-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background-color: #FFFFFF;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+            .edit-container h2 {
+                color: #1E3A8A;
+                text-align: center;
+                margin-bottom: 1.5rem;
+                font-weight: bold;
+            }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .form-control {
+            border-radius: 5px;
+            border: 1px solid #D1D5DB;
+            padding: 0.75rem;
+        }
+
+            .form-control:focus {
+                border-color: #1E3A8A;
+                box-shadow: 0 0 5px rgba(30, 58, 138, 0.3);
+            }
+
+        .btn-primary {
+            background-color: #F97316;
+            border: none;
+            width: 100%;
+            padding: 0.75rem;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+
+            .btn-primary:hover {
+                background-color: #E86100;
+            }
+
+        .btn-secondary {
+            background-color: #6B7280;
+            border: none;
+            width: 100%;
+            padding: 0.75rem;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+
+            .btn-secondary:hover {
+                background-color: #4B5563;
+            }
+
+        .day-schedule {
+            margin-bottom: 1.5rem;
+        }
+
+            .day-schedule h4 {
+                color: #374151;
+                margin-bottom: 0.5rem;
+            }
+
+        .alert {
+            margin-bottom: 1rem;
+        }
+
+        .section-box {
+            border: 1px solid #D1D5DB;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            color: #1E3A8A;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="edit-container">
+        <h2>Editar Oferta de Empleo</h2>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <form asp-action="EditarOferta" method="post">
+            <!-- Hidden fields -->
+            <input type="hidden" name="id_ofertaempleo" value="@ofertaEmp.id_ofertaempleo" />
+            <input type="hidden" name="id_empresa" value="@ViewBag.id_empresa" />
+            <input asp-for="PaisNombre" type="hidden" id="PaisNombre" />
+            <input asp-for="ProvinciaNombre" type="hidden" id="ProvinciaNombre" />
+            <input asp-for="EmpresaNombre" type="hidden" id="EmpresaNombre" value="@ViewBag.EmpresaNombre" />
+            <input type="hidden" id="horario" name="horario" value="@string.Join(";", horario)" />
+
+            <!-- Estado -->
+            <div class="form-group">
+                <label for="estado" class="form-label">Estado</label>
+                <select name="estado" id="estado" class="form-control" required>
+                    <option value="">Seleccione...</option>
+                    @foreach (var opcion in ViewBag.OpcEstado as List<SelectListItem>)
+                    {
+                        <option value="@opcion.Value" selected="@(opcion.Selected)">@opcion.Text</option>
+                    }
+                </select>
+                <span asp-validation-for="estado" class="text-danger"></span>
+            </div>
+
+            <!-- País -->
+            <div class="form-group">
+                <label asp-for="id_pais" class="form-label">País</label>
+                <select asp-for="id_pais" asp-items="@(ViewBag.Pais as SelectList)" class="form-control" id="cboPais" required>
+                    <option value="">Seleccione un país</option>
+                </select>
+                <span asp-validation-for="id_pais" class="text-danger"></span>
+            </div>
+
+            <!-- Provincia -->
+            <div class="form-group">
+                <label asp-for="id_provincia" class="form-label">Provincia</label>
+                <select asp-for="id_provincia" id="cboProvincia" name="id_provincia" class="form-control" required>
+                    <option value="">Seleccione una provincia</option>
+                    @foreach (var provincia in ViewBag.Provincia as SelectList)
+                    {
+                        <option value="@provincia.Value" selected="@(provincia.Selected)">@provincia.Text</option>
+                    }
+                </select>
+                <span asp-validation-for="id_provincia" class="text-danger"></span>
+            </div>
+
+            <!-- Título -->
+            <div class="form-group">
+                <label asp-for="titulo" class="form-label">Título</label>
+                <input asp-for="titulo" class="form-control" required value="@ofertaEmp.titulo" />
+                <span asp-validation-for="titulo" class="text-danger"></span>
+            </div>
+
+            <!-- Descripción -->
+            <div class="form-group">
+                <label asp-for="descripcion" class="form-label">Descripción</label>
+                <textarea asp-for="descripcion" class="form-control" rows="4" required>@ofertaEmp.descripcion</textarea>
+                <span asp-validation-for="descripcion" class="text-danger"></span>
+            </div>
+
+            <!-- Vacantes -->
+            <div class="form-group">
+                <label asp-for="vacante" class="form-label">Vacantes</label>
+                <input asp-for="vacante" class="form-control" type="number" step="1" min="0" required value="@ofertaEmp.vacante" />
+                <span asp-validation-for="vacante" class="text-danger"></span>
+            </div>
+
+            <!-- Salario -->
+            <div class="form-group">
+                <label asp-for="salario" class="form-label">Salario</label>
+                <input asp-for="salario" class="form-control" type="number" step="0.01" min="0" required value="@ofertaEmp.salario" />
+                <span asp-validation-for="salario" class="text-danger"></span>
+            </div>
+
+            <!-- Duración del Contrato -->
+            <div class="form-group">
+                <label asp-for="duracion_contrato" class="form-label">Duración del Contrato</label>
+                <input asp-for="duracion_contrato" class="form-control" required value="@ofertaEmp.duracion_contrato" />
+                <span asp-validation-for="duracion_contrato" class="text-danger"></span>
+            </div>
+
+            <!-- Sección: Categoría de la Oferta -->
+            <div class="section-box">
+                <h3 class="section-title">Categoría de la Oferta</h3>
+                <div class="form-group">
+                    <label class="form-label">Categoría</label>
+                    <select id="categoria" name="id_categoriaprofesional" class="form-control" required>
+                        <option value="">Seleccione una categoría</option>
+                        @if (ViewBag.Categorias != null)
+                        {
+                            foreach (var categoria in (List<SisEmpleo.Models.CategoriaProfesional>)ViewBag.Categorias)
+                            {
+                                <option value="@categoria.id_categoriaprofesional" selected="@(categoria.id_categoriaprofesional == categoriaActual)">@categoria.nombre</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Sección: Prestaciones de Ley -->
+            <div class="section-box">
+                <h3 class="section-title">Prestaciones de Ley</h3>
+                @if (ViewBag.Prestaciones != null)
+                {
+                    <div class="row">
+                        @{
+                            int prestacionesCount = ((List<SisEmpleo.Models.PrestacionLey>)ViewBag.Prestaciones).Count;
+                            int columnCount = prestacionesCount > 10 ? 3 : (prestacionesCount > 5 ? 2 : 1);
+                            int itemsPerColumn = (int)Math.Ceiling((double)prestacionesCount / columnCount);
+                            int currentItem = 0;
+                        }
+
+                        @for (int col = 0; col < columnCount; col++)
+                        {
+                            <div class="col-md-@(12 / columnCount)">
+                                @foreach (var prestacion in ((List<SisEmpleo.Models.PrestacionLey>)ViewBag.Prestaciones).Skip(col * itemsPerColumn).Take(itemsPerColumn))
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="PrestacionesSeleccionadas"
+                                               value="@prestacion.id_prestacionley" id="prest_@prestacion.id_prestacionley"
+                                               checked="@(prestacionesActuales.Contains(prestacion.id_prestacionley))" />
+                                        <label class="form-check-label" for="prest_@prestacion.id_prestacionley">@prestacion.nombre</label>
+                                    </div>
+                                    currentItem++;
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p>No hay prestaciones configuradas</p>
+                }
+            </div>
+
+            <!-- Habilidades -->
+            <div class="form-group">
+                <label class="form-label">Requisitos (Habilidades)</label>
+                @if (ViewBag.Habilidades != null)
+                {
+                    foreach (var habilidad in (List<SisEmpleo.Models.Habilidad>)ViewBag.Habilidades)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="HabilidadesSeleccionadas" value="@habilidad.id_habilidad"
+                                   id="hab_@habilidad.id_habilidad" checked="@(habilidadesActuales.Contains(habilidad.id_habilidad))" />
+                            <label class="form-check-label" for="hab_@habilidad.id_habilidad">@habilidad.nombre</label>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No hay habilidades disponibles.</p>
+                }
+            </div>
+
+            <!-- Horario -->
+            <h3 class="mt-4">Horario</h3>
+            @foreach (var dia in new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" })
+            {
+                <div class="day-schedule">
+                    <h4>@dia</h4>
+                    <div class="row">
+                        <div class="col-6">
+                            <input type="time" id="@(dia.ToLower())1" name="@(dia.ToLower())1" class="form-control" value="@(horario[Array.IndexOf(new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" }, dia) * 4])" />
+                        </div>
+                        <div class="col-6">
+                            <input type="time" id="@(dia.ToLower())2" name="@(dia.ToLower())2" class="form-control" value="@(horario[Array.IndexOf(new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" }, dia) * 4 + 1])" />
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <input type="time" id="@(dia.ToLower())3" name="@(dia.ToLower())3" class="form-control" value="@(horario[Array.IndexOf(new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" }, dia) * 4 + 2])" />
+                        </div>
+                        <div class="col-6">
+                            <input type="time" id="@(dia.ToLower())4" name="@(dia.ToLower())4" class="form-control" value="@(horario[Array.IndexOf(new[] { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" }, dia) * 4 + 3])" />
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Botones -->
+            <div class="row mt-4">
+                <div class="col-6">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+                <div class="col-6">
+                    <a href="/OfertaEmpleoEmpresa/ListarOfertas" class="btn btn-secondary">Cancelar</a>
+                </div>
+                </ problemas
+            </div>
+        </form>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            console.log("jQuery cargado");
+
+            // Cargar provincias al iniciar
+            var provinciaInicial = '@(ofertaEmp?.id_provincia ?? 0)';
+            var paisInicial = '@(ofertaEmp?.id_pais ?? 0)';
+            var primerCarga = true;
+
+            function cargarProvincias(idPais) {
+                if (!idPais) {
+                    $('#cboProvincia').html('<option value="">Seleccione un país primero</option>');
+                    return;
+                }
+
+                $('#cboProvincia').html('<option value="">Cargando provincias...</option>');
+
+                $.ajax({
+                    url: '/OfertaEmpleoEmpresa/ObtenerProvincia',
+                    type: 'GET',
+                    data: { id_pais: idPais },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data && data.length > 0) {
+                            var options = '<option value="">Seleccione una provincia</option>';
+                            $.each(data, function (index, provincia) {
+                                options += '<option value="' + provincia.id_provincia + '">' + provincia.nombre + '</option>';
+                            });
+                            $('#cboProvincia').html(options);
+
+                            if (primerCarga && idPais == paisInicial) {
+                                $('#cboProvincia').val(provinciaInicial);
+                            }
+
+                            primerCarga = false;
+                            $("#ProvinciaNombre").val($("#cboProvincia option:selected").text());
+                        } else {
+                            $('#cboProvincia').html('<option value="">No hay provincias para este país</option>');
+                        }
+                    },
+                    error: function () {
+                        $('#cboProvincia').html('<option value="">Error al cargar provincias</option>');
+                    }
+                });
+            }
+
+            // Evento de cambio en país
+            $('#cboPais').change(function () {
+                var idPais = $(this).val();
+                cargarProvincias(idPais);
+                $("#PaisNombre").val($("#cboPais option:selected").text());
+            });
+
+            // Actualizar ProvinciaNombre
+            $("#cboProvincia").change(function () {
+                $("#ProvinciaNombre").val($("#cboProvincia option:selected").text());
+            });
+
+            // Primera carga si hay país preseleccionado
+            if ($ ('#cboPais').val()) {
+                cargarProvincias($('#cboPais').val());
+            }
+
+            // Procesar horario al enviar formulario
+            $('form').on('submit', function () {
+                const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+                let horario = '';
+                dias.forEach(dia => {
+                    for (let i = 1; i <= 4; i++) {
+                        const time = $(`#${dia}${i}`).val() || "";
+                        horario += time + ';';
+                    }
+                });
+                $("#horario").val(horario);
+                console.log('Horario a enviar:', $("#horario").val());
+
+                // Validación de campos requeridos
+                let hasErrors = false;
+                $('[required]').each(function () {
+                    const $field = $(this);
+                    if (!$field.val()) {
+                        $field.addClass('is-invalid');
+                        if ($field.next('.text-danger').length === 0) {
+                            $field.after('<span class="text-danger">Este campo es requerido</span>');
+                        }
+                        hasErrors = true;
+                    } else {
+                        $field.removeClass('is-invalid');
+                        $field.next('.text-danger').remove();
+                    }
+                });
+
+                if (hasErrors) {
+                    event.preventDefault();
+                    const $firstError = $('.is-invalid').first();
+                    if ($firstError.length) {
+                        $('html, body').animate({
+                            scrollTop: $firstError.offset().top - 100
+                        }, 500);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
